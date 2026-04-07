@@ -2,27 +2,15 @@
 
 import json
 import logging
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 
-from openai import AsyncOpenAI
 from pydantic import ValidationError
 
 from models.schemas import ClientCard, ServiceCategory
+from src.gpt_client import get_openai_client
 
 logger = logging.getLogger(__name__)
-
-# Module-level singleton — created once on first use so that the env var
-# is read after load_dotenv() has been called in the CLI entry-point.
-_openai_client: AsyncOpenAI | None = None
-
-
-def _get_openai_client() -> AsyncOpenAI:
-    global _openai_client
-    if _openai_client is None:
-        _openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-    return _openai_client
 
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
@@ -97,7 +85,7 @@ async def extract_client_card(
         source_urls,
     )
 
-    client = _get_openai_client()
+    client = get_openai_client()
 
     try:
         response = await client.chat.completions.create(

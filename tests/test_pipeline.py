@@ -19,6 +19,8 @@ import pytest_asyncio
 # Ensure project root is on sys.path when running from tests/ directory
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+import src.gpt_client as _gpt_client_module
+
 from models.schemas import ClientCard, CRMRecord, ServiceCategory
 from src import crm as crm_module
 from src.scraper import scrape_urls, _extract_text
@@ -91,6 +93,14 @@ def _make_client_card(**kwargs: Any) -> ClientCard:
     return ClientCard(**defaults)
 
 
+@pytest.fixture(autouse=True)
+def _reset_openai_singleton() -> Any:
+    """Reset the shared GPT singleton before and after each test."""
+    _gpt_client_module._openai_client = None
+    yield
+    _gpt_client_module._openai_client = None
+
+
 # ---------------------------------------------------------------------------
 # 1. Scraper tests
 # ---------------------------------------------------------------------------
@@ -156,7 +166,7 @@ async def test_extractor_builds_client_card() -> None:
 
     texts = {"https://example.com": "some scraped text about the business"}
 
-    with patch("src.extractor.AsyncOpenAI", return_value=mock_openai):
+    with patch("src.gpt_client.AsyncOpenAI", return_value=mock_openai):
         card = await extract_client_card(texts, ["https://example.com"])
 
     assert isinstance(card, ClientCard)
@@ -201,7 +211,7 @@ async def test_call_script_returns_string() -> None:
 
     card = _make_client_card()
 
-    with patch("src.call_script.AsyncOpenAI", return_value=mock_openai):
+    with patch("src.gpt_client.AsyncOpenAI", return_value=mock_openai):
         script = await generate_call_script(card)
 
     assert isinstance(script, str)
@@ -314,8 +324,7 @@ async def test_full_pipeline_dry_run(tmp_path: Path) -> None:
 
     with (
         patch("src.scraper.httpx.AsyncClient") as mock_client_cls,
-        patch("src.extractor.AsyncOpenAI", return_value=mock_openai_instance),
-        patch("src.call_script.AsyncOpenAI", return_value=mock_openai_instance),
+        patch("src.gpt_client.AsyncOpenAI", return_value=mock_openai_instance),
     ):
         mock_client = AsyncMock()
         mock_client.__aenter__ = AsyncMock(return_value=mock_client)
@@ -437,7 +446,7 @@ async def test_extractor_raises_on_openai_error() -> None:
 
     texts = {"https://example.com": "some text about the business"}
 
-    with patch("src.extractor._get_openai_client", return_value=mock_openai):
+    with patch("src.extractor.get_openai_client", return_value=mock_openai):
         with pytest.raises(ExtractionError, match="OpenAI API call failed"):
             await extract_client_card(texts, ["https://example.com"])
 
@@ -462,7 +471,7 @@ async def test_extractor_raises_on_invalid_json() -> None:
 
     texts = {"https://example.com": "some text"}
 
-    with patch("src.extractor._get_openai_client", return_value=mock_openai):
+    with patch("src.extractor.get_openai_client", return_value=mock_openai):
         with pytest.raises(ExtractionError, match="invalid JSON"):
             await extract_client_card(texts, ["https://example.com"])
 
@@ -493,7 +502,7 @@ async def test_extractor_fallback_business_name() -> None:
     mock_openai = MagicMock()
     mock_openai.chat = mock_chat
 
-    with patch("src.extractor._get_openai_client", return_value=mock_openai):
+    with patch("src.extractor.get_openai_client", return_value=mock_openai):
         card = await extract_client_card(
             {"https://example.com": "text"}, ["https://example.com"]
         )
@@ -514,7 +523,7 @@ async def test_call_script_raises_on_openai_error() -> None:
     mock_openai = MagicMock()
     mock_openai.chat = mock_chat
 
-    with patch("src.call_script._get_openai_client", return_value=mock_openai):
+    with patch("src.call_script.get_openai_client", return_value=mock_openai):
         with pytest.raises(CallScriptError, match="OpenAI API call failed"):
             await generate_call_script(_make_client_card())
 
@@ -533,7 +542,7 @@ async def test_call_script_raises_on_empty_response() -> None:
     mock_openai = MagicMock()
     mock_openai.chat = mock_chat
 
-    with patch("src.call_script._get_openai_client", return_value=mock_openai):
+    with patch("src.call_script.get_openai_client", return_value=mock_openai):
         with pytest.raises(CallScriptError, match="empty call script"):
             await generate_call_script(_make_client_card())
 

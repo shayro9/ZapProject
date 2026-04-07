@@ -21,6 +21,8 @@ from src.call_script import generate_call_script, CallScriptError
 from src import crm as crm_module
 from src.notifier import send_call_script
 
+from models.schemas import CRMRecord
+
 load_dotenv()
 
 logging.basicConfig(
@@ -165,7 +167,6 @@ async def _run_pipeline(
         # Init DB (idempotent)
         crm_module.init_db(resolved_db)
 
-        from models.schemas import CRMRecord
         record = CRMRecord(
             client_card=client_card,
             call_script=call_script,
