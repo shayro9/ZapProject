@@ -1,13 +1,13 @@
 # ZapProject
 
-> **AI-powered onboarding automation for Zap producers** 
->
-> from a client URL to a personalised Hebrew call script in under 60 seconds.
-> 
-> In this README you'll find:
-> - An overview of the system design and technology choices
-> - A more technical part with quick start, usage examples and project structure
----
+ **AI-powered onboarding automation for Zap producers** 
+
+ from a client URL to a personalised Hebrew call script in under 60 seconds.
+ 
+ In this README you'll find:
+ - An overview of the system design and technology choices
+ - A more technical part with quick start, usage examples and project structure
+
 
 ## How It Works
 
