@@ -641,7 +641,22 @@ async def test_notifier_returns_true_on_success(monkeypatch: pytest.MonkeyPatch)
 # ---------------------------------------------------------------------------
 
 
-def test_crm_init_db_is_idempotent(tmp_path: Path) -> None:
+def test_crm_update_notified(tmp_path: Path) -> None:
+    """update_notified persists the notified flag to the database."""
+    db_file = str(tmp_path / "update_notified.db")
+    crm_module.init_db(db_file)
+
+    record = CRMRecord(client_card=_make_client_card(), call_script=SAMPLE_CALL_SCRIPT, notified=False)
+    record_id = crm_module.insert_record(db_file, record)
+
+    assert crm_module.list_records(db_file)[0].notified is False
+
+    crm_module.update_notified(db_file, record_id, notified=True)
+
+    assert crm_module.list_records(db_file)[0].notified is True
+
+
+
     """Calling init_db twice on the same path does not raise."""
     db_file = str(tmp_path / "idempotent.db")
     crm_module.init_db(db_file)

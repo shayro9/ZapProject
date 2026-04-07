@@ -187,8 +187,8 @@ async def _run_pipeline(
             console.print(
                 f"[green]✓[/green] Call script emailed to [bold]{notify_to}[/bold]."
             )
-            # Mark as notified
             record.notified = True
+            crm_module.update_notified(resolved_db, record_id, notified=True)
         else:
             console.print(
                 f"[yellow]⚠[/yellow] Email notification failed for {notify_to}."

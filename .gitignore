@@ -1,0 +1,19 @@
+# Secrets & config
+.env
+
+# Database (contains customer PII)
+*.db
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+
+# Virtual environment
+.venv/
+venv/
+
+# IDE
+.idea/
+.vscode/

@@ -86,6 +86,23 @@ def insert_record(db_path: str, record: CRMRecord) -> int:
     return new_id
 
 
+def update_notified(db_path: str, record_id: int, notified: bool) -> None:
+    """
+    Persist the notified status for a given record id.
+
+    Called after a successful (or failed) email delivery to keep the
+    CRM in sync with actual notification state.
+    """
+    notified_int = 1 if notified else 0
+    with _get_connection(db_path) as conn:
+        conn.execute(
+            "UPDATE onboarding_records SET notified = ? WHERE id = ?",
+            (notified_int, record_id),
+        )
+        conn.commit()
+    logger.info("Updated notified=%s for record id=%d", notified, record_id)
+
+
 def list_records(db_path: str) -> list[CRMRecord]:
     """
     Return all CRM records as CRMRecord objects, ordered newest first.
