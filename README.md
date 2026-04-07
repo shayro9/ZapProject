@@ -73,8 +73,6 @@
 
 ---
 
----
-
 ## Quick Start
 
 ### Prerequisites
@@ -87,7 +85,7 @@
 ### 1. Clone the repository
 
 ```bash
-git clone https://github.com/your-org/ZapProject.git
+git clone https://github.com/shayro9/ZapProject.git
 cd ZapProject
 ```
 

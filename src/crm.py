@@ -1,10 +1,8 @@
 """SQLite CRM for onboarding records."""
 
-import json
 import logging
 import sqlite3
 from datetime import datetime
-from typing import Optional
 
 from models.schemas import ClientCard, CRMRecord
 
