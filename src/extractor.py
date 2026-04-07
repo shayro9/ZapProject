@@ -13,6 +13,17 @@ from models.schemas import ClientCard, ServiceCategory
 
 logger = logging.getLogger(__name__)
 
+# Module-level singleton — created once on first use so that the env var
+# is read after load_dotenv() has been called in the CLI entry-point.
+_openai_client: AsyncOpenAI | None = None
+
+
+def _get_openai_client() -> AsyncOpenAI:
+    global _openai_client
+    if _openai_client is None:
+        _openai_client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    return _openai_client
+
 PROMPTS_DIR = Path(__file__).parent.parent / "prompts"
 
 # Max total characters of scraped text sent to the model (~3 tokens/char → ~4 000 tokens)
@@ -86,7 +97,7 @@ async def extract_client_card(
         source_urls,
     )
 
-    client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+    client = _get_openai_client()
 
     try:
         response = await client.chat.completions.create(

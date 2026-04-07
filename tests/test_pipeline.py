@@ -437,7 +437,7 @@ async def test_extractor_raises_on_openai_error() -> None:
 
     texts = {"https://example.com": "some text about the business"}
 
-    with patch("src.extractor.AsyncOpenAI", return_value=mock_openai):
+    with patch("src.extractor._get_openai_client", return_value=mock_openai):
         with pytest.raises(ExtractionError, match="OpenAI API call failed"):
             await extract_client_card(texts, ["https://example.com"])
 
@@ -462,7 +462,7 @@ async def test_extractor_raises_on_invalid_json() -> None:
 
     texts = {"https://example.com": "some text"}
 
-    with patch("src.extractor.AsyncOpenAI", return_value=mock_openai):
+    with patch("src.extractor._get_openai_client", return_value=mock_openai):
         with pytest.raises(ExtractionError, match="invalid JSON"):
             await extract_client_card(texts, ["https://example.com"])
 
@@ -493,7 +493,7 @@ async def test_extractor_fallback_business_name() -> None:
     mock_openai = MagicMock()
     mock_openai.chat = mock_chat
 
-    with patch("src.extractor.AsyncOpenAI", return_value=mock_openai):
+    with patch("src.extractor._get_openai_client", return_value=mock_openai):
         card = await extract_client_card(
             {"https://example.com": "text"}, ["https://example.com"]
         )
@@ -514,7 +514,7 @@ async def test_call_script_raises_on_openai_error() -> None:
     mock_openai = MagicMock()
     mock_openai.chat = mock_chat
 
-    with patch("src.call_script.AsyncOpenAI", return_value=mock_openai):
+    with patch("src.call_script._get_openai_client", return_value=mock_openai):
         with pytest.raises(CallScriptError, match="OpenAI API call failed"):
             await generate_call_script(_make_client_card())
 
@@ -533,7 +533,7 @@ async def test_call_script_raises_on_empty_response() -> None:
     mock_openai = MagicMock()
     mock_openai.chat = mock_chat
 
-    with patch("src.call_script.AsyncOpenAI", return_value=mock_openai):
+    with patch("src.call_script._get_openai_client", return_value=mock_openai):
         with pytest.raises(CallScriptError, match="empty call script"):
             await generate_call_script(_make_client_card())
 
