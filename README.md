@@ -119,6 +119,8 @@ python main.py run \
   --email producer@zap.co.il
 ```
 
+> **Email routing**: `--email` is the **Zap producer's** address (the person making the call). The call script is sent there so they have it before dialling. The client's own email (if extracted) is stored in the Client Card for reference.
+
 ---
 
 ## Usage
@@ -127,7 +129,7 @@ python main.py run \
 python main.py run \
   --url https://karmi-ac.co.il \
   --url https://www.d.co.il/business/karmi-mazganim \
-  --email karmi@karmi-ac.co.il
+  --email producer@zap.co.il
 ```
 
 **Example terminal output:**
@@ -170,13 +172,13 @@ Extracting client data with GPT-4o…
 │ מצוין! נשלח אליך סיכום בדוא"ל. תודה, יוסי, ושיהיה לך יום טוב!     │
 ╰───────────────────────────────────────────────────────────────────────╯
 ✓ CRM record inserted (id=1) in 'crm.db'.
-✓ Call script emailed to karmi@karmi-ac.co.il.
+✓ Call script emailed to producer@zap.co.il.
 ╭─ Summary ────────────────────────────────────────────────────────────╮
 │ ✅ Onboarding pipeline complete                                        │
 │ Business : מזגנים כרמי                                                │
 │ Area     : קריות                                                      │
 │ Services : 3                                                          │
-│ Email    : karmi@karmi-ac.co.il                                       │
+│ Email    : producer@zap.co.il                                         │
 │ Dry-run  : False                                                      │
 ╰───────────────────────────────────────────────────────────────────────╯
 ```
@@ -187,7 +189,7 @@ Extracting client data with GPT-4o…
 ```
 ZapProject/
 │
-├── main.py                    # Typer CLI entry point; defines the `run` command
+├── main.py                    # Typer CLI entry point; defines `run` and `list` commands
 │                              # and the async _run_pipeline() orchestrator
 │
 ├── requirements.txt           # Pinned package versions (pip install -r)
@@ -201,7 +203,7 @@ ZapProject/
 │   ├── extractor.py           # extract_client_card(): GPT-4o JSON mode → ClientCard
 │   ├── call_script.py         # generate_call_script(): GPT-4o → Hebrew call script str
 │   ├── crm.py                 # init_db(), insert_record(), list_records() — SQLite
-│   └── notifier.py            # send_call_script(): Resend email delivery
+│   └── notifier.py            # send_call_script(): Resend HTML email delivery
 │
 ├── models/
 │   ├── __init__.py
@@ -245,3 +247,13 @@ CREATE TABLE IF NOT EXISTS onboarding_records (
 
 
 > **Security note:** Never commit your `.env` file. `.env.example` (no real keys) is safe to commit and acts as documentation for required configuration. `.env` is listed in `.gitignore`.
+
+---
+
+## Known Limitations
+
+| Limitation | Detail | Upgrade Path |
+|---|---|---|
+| **JavaScript-rendered pages** | The scraper uses `httpx` + BeautifulSoup, which fetches raw HTML only. Sites that load content via client-side JS (React/Vue SPAs) will return sparse or empty text. | Replace `_fetch_one` with a [Playwright](https://playwright.dev/python/) coroutine for JS-heavy pages. |
+| **Email sender domain** | `onboarding@resend.dev` is Resend's shared sandbox. Emails may land in spam or be rate-limited in production. | Verify a custom domain in Resend and update `_FROM_ADDRESS` in `notifier.py`. |
+| **Single-table CRM** | The SQLite schema is intentionally minimal — no deduplication, no update-in-place for existing businesses. | Add a `UNIQUE` constraint on `business_name` + `upsert` logic, or migrate to PostgreSQL when volume justifies it. |

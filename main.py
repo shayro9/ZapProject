@@ -3,6 +3,7 @@
 import asyncio
 import logging
 import os
+from pathlib import Path
 from typing import Optional
 
 import typer
@@ -10,6 +11,7 @@ from dotenv import load_dotenv
 from rich.console import Console
 from rich.panel import Panel
 from rich.json import JSON
+from rich.table import Table
 from rich.text import Text
 
 from src.url_discovery import discover_urls, DiscoveryError
@@ -50,7 +52,7 @@ def run(
     email: str = typer.Option(
         ...,
         "--email",
-        help="Client / producer email address for notification.",
+        help="Zap producer email address — the call script is sent here, not to the client.",
     ),
     db_path: Optional[str] = typer.Option(
         None,
@@ -175,7 +177,7 @@ async def _run_pipeline(
             f"[green]✓[/green] CRM record inserted (id={record_id}) in '{resolved_db}'."
         )
 
-        # Send email if client has an email address
+        # Send the call script to the Zap producer
         notify_to = email
         sent = await send_call_script(
             to_email=notify_to,
@@ -207,6 +209,60 @@ async def _run_pipeline(
             expand=False,
         )
     )
+
+
+@app.command(name="list")
+def list_records_cmd(
+    db_path: Optional[str] = typer.Option(
+        None,
+        "--db",
+        help="CRM SQLite DB path (default: CRM_DB_PATH env var, or 'crm.db').",
+    ),
+    limit: int = typer.Option(
+        20,
+        "--limit",
+        "-n",
+        help="Maximum number of records to display (newest first).",
+    ),
+) -> None:
+    """List onboarding records stored in the CRM database."""
+    resolved_db = db_path or os.environ.get("CRM_DB_PATH", "crm.db")
+
+    if not Path(resolved_db).exists():
+        console.print(
+            f"[yellow]⚠ Database not found:[/yellow] [bold]{resolved_db}[/bold]\n"
+            "Run the pipeline first to create it."
+        )
+        raise typer.Exit(code=1)
+
+    records = crm_module.list_records(resolved_db)
+
+    if not records:
+        console.print("[yellow]No records found in the CRM.[/yellow]")
+        return
+
+    table = Table(
+        title=f"CRM Onboarding Records — {resolved_db} ({len(records)} total)",
+        show_lines=True,
+    )
+    table.add_column("ID", style="cyan", no_wrap=True, justify="right")
+    table.add_column("Business", style="bold")
+    table.add_column("Area")
+    table.add_column("Services", justify="center")
+    table.add_column("Notified", justify="center")
+    table.add_column("Created At", style="dim")
+
+    for record in records[:limit]:
+        table.add_row(
+            str(record.id),
+            record.client_card.business_name,
+            record.client_card.area or "—",
+            str(len(record.client_card.services)),
+            "✅" if record.notified else "❌",
+            record.created_at.strftime("%Y-%m-%d  %H:%M"),
+        )
+
+    console.print(table)
 
 
 if __name__ == "__main__":
