@@ -214,7 +214,7 @@ ZapProject/
 │   └── call_script.txt        # GPT-4o system prompt: generate Hebrew onboarding script
 │
 └── tests/
-    └── test_pipeline.py       # 8 pytest-asyncio tests; all I/O is patched with unittest.mock
+    └── test_pipeline.py       # 31 pytest-asyncio tests; all I/O is patched with unittest.mock
 ```
 
 ---

@@ -235,7 +235,7 @@ def list_records_cmd(
         )
         raise typer.Exit(code=1)
 
-    records = crm_module.list_records(resolved_db)
+    records = crm_module.list_records(resolved_db, limit=limit)
 
     if not records:
         console.print("[yellow]No records found in the CRM.[/yellow]")
@@ -252,7 +252,7 @@ def list_records_cmd(
     table.add_column("Notified", justify="center")
     table.add_column("Created At", style="dim")
 
-    for record in records[:limit]:
+    for record in records:
         table.add_row(
             str(record.id),
             record.client_card.business_name,

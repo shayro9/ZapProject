@@ -101,16 +101,22 @@ def update_notified(db_path: str, record_id: int, notified: bool) -> None:
     logger.info("Updated notified=%s for record id=%d", notified, record_id)
 
 
-def list_records(db_path: str) -> list[CRMRecord]:
+def list_records(db_path: str, limit: int = 0) -> list[CRMRecord]:
     """
-    Return all CRM records as CRMRecord objects, ordered newest first.
+    Return CRM records as CRMRecord objects, ordered newest first.
+
+    Args:
+        limit: Maximum number of records to return. 0 means no limit.
     """
     records: list[CRMRecord] = []
+    query = "SELECT * FROM onboarding_records ORDER BY id DESC"
+    params: tuple = ()
+    if limit > 0:
+        query += " LIMIT ?"
+        params = (limit,)
 
     with _get_connection(db_path) as conn:
-        rows = conn.execute(
-            "SELECT * FROM onboarding_records ORDER BY id DESC"
-        ).fetchall()
+        rows = conn.execute(query, params).fetchall()
 
     for row in rows:
         try:
